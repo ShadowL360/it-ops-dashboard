@@ -1,6 +1,6 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { supabase } from "./supabase";
+import { supabase, checkIfUserIsAdmin } from "./supabase";
 import type { User } from "@supabase/supabase-js";
 import { toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  isAdmin: boolean;
   signUp: (email: string, password: string) => Promise<{ error: any | null }>;
   signIn: (email: string, password: string) => Promise<{ error: any | null }>;
   signOut: () => Promise<void>;
@@ -19,13 +20,20 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     const getSession = async () => {
       try {
         const { data } = await supabase.auth.getSession();
-        setUser(data.session?.user || null);
+        const sessionUser = data.session?.user || null;
+        setUser(sessionUser);
+        
+        if (sessionUser) {
+          const adminStatus = await checkIfUserIsAdmin(sessionUser.id);
+          setIsAdmin(adminStatus);
+        }
       } catch (error) {
         console.error("Error getting session:", error);
         setUser(null);
@@ -37,8 +45,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     getSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setUser(session?.user || null);
+      async (event, session) => {
+        const sessionUser = session?.user || null;
+        setUser(sessionUser);
+        
+        if (sessionUser) {
+          const adminStatus = await checkIfUserIsAdmin(sessionUser.id);
+          setIsAdmin(adminStatus);
+        } else {
+          setIsAdmin(false);
+        }
+        
         setLoading(false);
       }
     );
@@ -138,6 +155,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const value = {
     user,
     loading,
+    isAdmin,
     signUp,
     signIn,
     signOut,

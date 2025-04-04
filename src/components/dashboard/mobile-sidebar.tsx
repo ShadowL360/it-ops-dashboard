@@ -2,7 +2,6 @@
 import {
   Sheet,
   SheetContent,
-  SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
@@ -12,8 +11,6 @@ import { Logo } from "@/components/logo";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
 import {
-  Box,
-  CreditCard,
   HelpCircle,
   LayoutDashboard,
   LogOut,
@@ -21,25 +18,59 @@ import {
   User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
+import { checkIfUserIsAdmin } from "@/lib/supabase";
 
 export const MobileSidebar = () => {
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const location = useLocation();
-
-  const menuItems = [
+  const [isAdmin, setIsAdmin] = useState(false);
+  
+  useEffect(() => {
+    if (user) {
+      checkIfUserIsAdmin(user.id).then(result => {
+        setIsAdmin(result);
+      });
+    }
+  }, [user]);
+  
+  const regularUserMenuItems = [
     {
       title: "Dashboard",
       icon: LayoutDashboard,
       path: "/dashboard",
     },
     {
+      title: "Perfil",
+      icon: User,
+      path: "/dashboard/profile",
+    },
+    {
+      title: "Suporte",
+      icon: Ticket,
+      path: "/dashboard/support",
+    },
+  ];
+  
+  const adminMenuItems = [
+    {
+      title: "Dashboard",
+      icon: LayoutDashboard,
+      path: "/dashboard",
+    },
+    {
+      title: "Perfil",
+      icon: User,
+      path: "/dashboard/profile",
+    },
+    {
       title: "Serviços",
-      icon: Box,
+      icon: Ticket,
       path: "/dashboard/services",
     },
     {
       title: "Faturação",
-      icon: CreditCard,
+      icon: Ticket,
       path: "/dashboard/billing",
     },
     {
@@ -47,12 +78,9 @@ export const MobileSidebar = () => {
       icon: Ticket,
       path: "/dashboard/support",
     },
-    {
-      title: "Perfil",
-      icon: User,
-      path: "/dashboard/profile",
-    },
   ];
+  
+  const menuItems = isAdmin ? adminMenuItems : regularUserMenuItems;
 
   const isActive = (path: string) => {
     return location.pathname === path;

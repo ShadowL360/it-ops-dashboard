@@ -20,6 +20,7 @@ export type UserProfile = {
   phone: string | null;
   avatar_url: string | null;
   created_at: string;
+  is_admin?: boolean;
 };
 
 // Tipos para as subscrições
@@ -69,4 +70,18 @@ export type SupportTicket = {
   priority: "low" | "medium" | "high";
   created_at: string;
   updated_at: string;
+};
+
+// Função para verificar se um usuário é administrador
+export const checkIfUserIsAdmin = async (userId: string): Promise<boolean> => {
+  if (!userId) return false;
+  
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('is_admin')
+    .eq('id', userId)
+    .single();
+    
+  if (error || !data) return false;
+  return data.is_admin === true;
 };

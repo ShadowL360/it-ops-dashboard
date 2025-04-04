@@ -1,36 +1,49 @@
 
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Ticket } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { SupportTicket } from "@/lib/supabase";
+import { Badge } from "@/components/ui/badge";
+import { formatDistanceToNow } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface SupportTicketsProps {
   tickets: SupportTicket[];
 }
 
-export const SupportTickets = ({ tickets }: SupportTicketsProps) => {
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat("pt-PT", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    }).format(date);
-  };
-
-  const getStatusVariant = (status: string) => {
+export function SupportTickets({ tickets }: SupportTicketsProps) {
+  const getStatusColor = (status: string) => {
     switch (status) {
       case "open":
-        return "default";
+        return "bg-yellow-500 hover:bg-yellow-600";
       case "in_progress":
-        return "secondary";
+        return "bg-blue-500 hover:bg-blue-600";
       case "resolved":
-        return "success";
+        return "bg-green-500 hover:bg-green-600";
       case "closed":
-        return "outline";
+        return "bg-gray-500 hover:bg-gray-600";
       default:
-        return "default";
+        return "bg-gray-500 hover:bg-gray-600";
+    }
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case "high":
+        return "bg-red-500 hover:bg-red-600";
+      case "medium":
+        return "bg-orange-500 hover:bg-orange-600";
+      case "low":
+        return "bg-blue-500 hover:bg-blue-600";
+      default:
+        return "bg-gray-500 hover:bg-gray-600";
     }
   };
 
@@ -43,50 +56,78 @@ export const SupportTickets = ({ tickets }: SupportTicketsProps) => {
       case "resolved":
         return "Resolvido";
       case "closed":
-        return "Encerrado";
+        return "Fechado";
       default:
         return status;
+    }
+  };
+
+  const getPriorityText = (priority: string) => {
+    switch (priority) {
+      case "high":
+        return "Alta";
+      case "medium":
+        return "Média";
+      case "low":
+        return "Baixa";
+      default:
+        return priority;
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    try {
+      return formatDistanceToNow(new Date(dateString), {
+        addSuffix: true,
+        locale: ptBR,
+      });
+    } catch (error) {
+      return dateString;
     }
   };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-xl font-heading">Tickets de Suporte</CardTitle>
-        <CardDescription>Acompanhe seus pedidos de suporte</CardDescription>
+        <CardTitle>Seus Pedidos</CardTitle>
       </CardHeader>
       <CardContent>
         {tickets.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-8 text-center">
-            <Ticket className="h-10 w-10 text-muted-foreground mb-3 opacity-60" />
-            <p className="text-muted-foreground mb-4">Você não tem tickets de suporte abertos</p>
-            <Button>Criar Ticket</Button>
-          </div>
+          <p className="text-center text-muted-foreground py-6">
+            Não existem pedidos de suporte ativos.
+          </p>
         ) : (
-          <div className="space-y-4">
-            {tickets.map((ticket) => (
-              <div key={ticket.id} className="border rounded-md p-4">
-                <div className="flex justify-between items-start mb-2">
-                  <h4 className="font-medium">{ticket.title}</h4>
-                  <Badge variant={getStatusVariant(ticket.status) as any}>
-                    {getStatusText(ticket.status)}
-                  </Badge>
-                </div>
-                <p className="text-sm text-muted-foreground mb-2 line-clamp-2">{ticket.description}</p>
-                <div className="flex justify-between items-center text-xs text-muted-foreground">
-                  <span>Ticket #{ticket.id.substring(0, 6)}</span>
-                  <span>Criado em {formatDate(ticket.created_at)}</span>
-                </div>
-              </div>
-            ))}
-          </div>
+          <Table>
+            <TableCaption>Lista dos seus pedidos de suporte recentes</TableCaption>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Título</TableHead>
+                <TableHead>Prioridade</TableHead>
+                <TableHead>Estado</TableHead>
+                <TableHead>Data</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {tickets.map((ticket) => (
+                <TableRow key={ticket.id}>
+                  <TableCell className="font-medium">{ticket.title}</TableCell>
+                  <TableCell>
+                    <Badge className={getPriorityColor(ticket.priority)}>
+                      {getPriorityText(ticket.priority)}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={getStatusColor(ticket.status)}>
+                      {getStatusText(ticket.status)}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{formatDate(ticket.created_at)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         )}
       </CardContent>
-      <CardFooter>
-        <Button className="w-full">
-          {tickets.length === 0 ? "Criar Ticket" : "Ver Todos os Tickets"}
-        </Button>
-      </CardFooter>
     </Card>
   );
-};
+}

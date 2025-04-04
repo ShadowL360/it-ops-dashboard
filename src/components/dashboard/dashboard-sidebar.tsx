@@ -2,37 +2,67 @@
 import { useAuth } from "@/lib/auth";
 import { Logo } from "@/components/logo";
 import {
-  Box,
-  CreditCard,
   HelpCircle,
-  Home,
   LayoutDashboard,
   LifeBuoy,
   LogOut,
-  Settings,
   Ticket,
   User,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { checkIfUserIsAdmin } from "@/lib/supabase";
 
 export const DashboardSidebar = () => {
   const { user, signOut } = useAuth();
   const location = useLocation();
+  const [isAdmin, setIsAdmin] = useState(false);
   
-  const menuItems = [
+  useEffect(() => {
+    if (user) {
+      checkIfUserIsAdmin(user.id).then(result => {
+        setIsAdmin(result);
+      });
+    }
+  }, [user]);
+  
+  const regularUserMenuItems = [
     {
       title: "Dashboard",
       icon: LayoutDashboard,
       path: "/dashboard",
     },
     {
+      title: "Perfil",
+      icon: User,
+      path: "/dashboard/profile",
+    },
+    {
+      title: "Suporte",
+      icon: Ticket,
+      path: "/dashboard/support",
+    },
+  ];
+  
+  const adminMenuItems = [
+    {
+      title: "Dashboard",
+      icon: LayoutDashboard,
+      path: "/dashboard",
+    },
+    {
+      title: "Perfil",
+      icon: User,
+      path: "/dashboard/profile",
+    },
+    {
       title: "Serviços",
-      icon: Box,
+      icon: Ticket,
       path: "/dashboard/services",
     },
     {
       title: "Faturação",
-      icon: CreditCard,
+      icon: Ticket,
       path: "/dashboard/billing",
     },
     {
@@ -40,12 +70,9 @@ export const DashboardSidebar = () => {
       icon: Ticket,
       path: "/dashboard/support",
     },
-    {
-      title: "Perfil",
-      icon: User,
-      path: "/dashboard/profile",
-    },
   ];
+  
+  const menuItems = isAdmin ? adminMenuItems : regularUserMenuItems;
 
   const isActive = (path: string) => {
     return location.pathname === path;

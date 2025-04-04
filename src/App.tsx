@@ -22,6 +22,7 @@ import ProfilePage from "./pages/dashboard/profile";
 
 // Componentes
 import { ProtectedRoute } from "./components/protected-route";
+import { AdminRoute } from "./components/admin-route";
 
 const queryClient = new QueryClient();
 
@@ -39,25 +40,10 @@ const App = () => (
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-            {/* Rotas protegidas do dashboard */}
+            {/* Rotas protegidas do dashboard - usuários comuns */}
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <DashboardPage />
-              </ProtectedRoute>
-            } />
-            <Route path="/dashboard/services" element={
-              <ProtectedRoute>
-                <ServicesPage />
-              </ProtectedRoute>
-            } />
-            <Route path="/dashboard/billing" element={
-              <ProtectedRoute>
-                <BillingPage />
-              </ProtectedRoute>
-            } />
-            <Route path="/dashboard/support" element={
-              <ProtectedRoute>
-                <SupportPage />
               </ProtectedRoute>
             } />
             <Route path="/dashboard/profile" element={
@@ -65,6 +51,25 @@ const App = () => (
                 <ProfilePage />
               </ProtectedRoute>
             } />
+            <Route path="/dashboard/support" element={
+              <ProtectedRoute>
+                <SupportPage />
+              </ProtectedRoute>
+            } />
+            
+            {/* Rotas protegidas do dashboard - apenas administradores */}
+            <Route path="/dashboard/services" element={
+              <AdminRoute>
+                <ServicesPage />
+              </AdminRoute>
+            } />
+            <Route path="/dashboard/billing" element={
+              <AdminRoute>
+                <BillingPage />
+              </AdminRoute>
+            } />
+            
+            {/* Redirecionamentos */}
             <Route path="/dashboard/help" element={
               <ProtectedRoute>
                 <Navigate to="/dashboard/support" replace />
