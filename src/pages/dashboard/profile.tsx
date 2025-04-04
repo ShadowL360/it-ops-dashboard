@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -28,7 +28,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "@/hooks/use-toast";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase, UserProfile } from "@/lib/supabase";
 import { Loader2 } from "lucide-react";
 
@@ -54,21 +54,26 @@ export default function ProfilePage() {
   const { user } = useAuth();
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const queryClient = useQueryClient();
 
   // Fetch user profile data
   const { data: profile, isLoading: isLoadingProfile } = useQuery({
     queryKey: ["user-profile", user?.id],
     queryFn: async () => {
-      // Simulação de dados
-      return {
-        id: user?.id || "",
-        email: user?.email || "",
-        full_name: "João Silva",
-        company: "Tech Solutions",
-        phone: "+351 912 345 678",
-        avatar_url: null,
-        created_at: "2025-01-15T10:30:00Z",
-      } as UserProfile;
+      if (!user) throw new Error("User not authenticated");
+      
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+      if (error) {
+        console.error("Error fetching profile:", error);
+        return null;
+      }
+
+      return data as UserProfile;
     },
     enabled: !!user,
   });
@@ -77,16 +82,22 @@ export default function ProfilePage() {
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      full_name: profile?.full_name || "",
-      company: profile?.company || "",
-      phone: profile?.phone || "",
-    },
-    values: {
-      full_name: profile?.full_name || "",
-      company: profile?.company || "",
-      phone: profile?.phone || "",
+      full_name: "",
+      company: "",
+      phone: "",
     },
   });
+
+  // Update form values when profile data is loaded
+  useEffect(() => {
+    if (profile) {
+      profileForm.reset({
+        full_name: profile.full_name || "",
+        company: profile.company || "",
+        phone: profile.phone || "",
+      });
+    }
+  }, [profile, profileForm]);
 
   // Password form
   const passwordForm = useForm<PasswordFormValues>({
@@ -98,33 +109,44 @@ export default function ProfilePage() {
     },
   });
 
-  // Update profile function
-  const onProfileSubmit = async (values: ProfileFormValues) => {
-    setIsUpdatingProfile(true);
-    
-    try {
-      // Simular atualização de perfil
-      console.log("Atualizando perfil:", values);
+  // Update profile mutation
+  const updateProfileMutation = useMutation({
+    mutationFn: async (values: ProfileFormValues) => {
+      if (!user) throw new Error("User not authenticated");
       
-      // Em um ambiente real, chamaríamos a API do Supabase
-      // const { error } = await supabase
-      //   .from('profiles')
-      //   .update(values)
-      //   .eq('id', user.id);
-      
-      // if (error) throw error;
-      
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          full_name: values.full_name,
+          company: values.company,
+          phone: values.phone,
+        })
+        .eq("id", user.id);
+
+      if (error) throw error;
+      return values;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["user-profile"] });
       toast({
         title: "Perfil atualizado",
         description: "Suas informações de perfil foram atualizadas com sucesso.",
       });
-    } catch (error) {
-      console.error("Erro ao atualizar perfil:", error);
+    },
+    onError: (error) => {
       toast({
         title: "Erro ao atualizar perfil",
-        description: "Ocorreu um erro ao atualizar suas informações.",
+        description: error.message,
         variant: "destructive",
       });
+    },
+  });
+
+  // Update profile function
+  const onProfileSubmit = async (values: ProfileFormValues) => {
+    setIsUpdatingProfile(true);
+    try {
+      await updateProfileMutation.mutateAsync(values);
     } finally {
       setIsUpdatingProfile(false);
     }
@@ -135,15 +157,11 @@ export default function ProfilePage() {
     setIsChangingPassword(true);
     
     try {
-      // Simular alteração de senha
-      console.log("Alterando senha...");
+      const { error } = await supabase.auth.updateUser({
+        password: values.new_password
+      });
       
-      // Em um ambiente real, chamaríamos a API do Supabase
-      // const { error } = await supabase.auth.updateUser({
-      //   password: values.new_password
-      // });
-      
-      // if (error) throw error;
+      if (error) throw error;
       
       toast({
         title: "Senha alterada",
@@ -151,15 +169,70 @@ export default function ProfilePage() {
       });
       
       passwordForm.reset();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao alterar senha:", error);
       toast({
         title: "Erro ao alterar senha",
-        description: "Ocorreu um erro ao alterar sua senha.",
+        description: error.message,
         variant: "destructive",
       });
     } finally {
       setIsChangingPassword(false);
+    }
+  };
+
+  // Update avatar function
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    if (file.size > 1024 * 1024) {
+      toast({
+        title: "Arquivo muito grande",
+        description: "O tamanho máximo permitido é 1MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Upload imagem para o Storage (precisaria criar um bucket 'avatars' no Supabase)
+      const fileName = `${user.id}-${new Date().getTime()}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(fileName);
+
+      if (!urlData.publicUrl) throw new Error("Failed to get public URL");
+
+      // Update profile with new avatar URL
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ avatar_url: urlData.publicUrl })
+        .eq("id", user.id);
+
+      if (updateError) throw updateError;
+
+      // Refresh profile data
+      queryClient.invalidateQueries({ queryKey: ["user-profile"] });
+      
+      toast({
+        title: "Avatar atualizado",
+        description: "Seu avatar foi atualizado com sucesso.",
+      });
+    } catch (error: any) {
+      console.error("Erro ao atualizar avatar:", error);
+      toast({
+        title: "Erro ao atualizar avatar",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   };
 
@@ -203,12 +276,12 @@ export default function ProfilePage() {
                 
                 <div className="space-y-1">
                   <h3 className="font-medium text-lg">{profile?.full_name || "Usuário"}</h3>
-                  <p className="text-muted-foreground">{profile?.email}</p>
+                  <p className="text-muted-foreground">{profile?.email || user?.email}</p>
                   {profile?.company && (
                     <p className="text-sm">{profile.company}</p>
                   )}
                   <p className="text-xs text-muted-foreground">
-                    Membro desde {formatDate(profile?.created_at || "")}
+                    Membro desde {profile?.created_at ? formatDate(profile.created_at) : "N/A"}
                   </p>
                 </div>
               </div>
@@ -287,6 +360,7 @@ export default function ProfilePage() {
                       <Label htmlFor="avatar" className="mb-2 block">Foto de Perfil</Label>
                       <div className="flex items-center gap-4">
                         <Avatar className="w-16 h-16 border">
+                          <AvatarImage src={profile?.avatar_url || ""} />
                           <AvatarFallback>{userInitials}</AvatarFallback>
                         </Avatar>
                         <div>
@@ -295,6 +369,7 @@ export default function ProfilePage() {
                             type="file"
                             accept="image/*"
                             className="max-w-xs"
+                            onChange={handleAvatarUpload}
                           />
                           <p className="text-xs text-muted-foreground mt-1">
                             JPG, GIF ou PNG. Tamanho máximo de 1MB.

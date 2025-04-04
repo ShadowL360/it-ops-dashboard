@@ -17,14 +17,26 @@ export default function DashboardPage() {
   const { data: subscriptionData, isLoading: isLoadingSubscription } = useQuery({
     queryKey: ["subscription", user?.id],
     queryFn: async () => {
-      // Simulação de dados. Substitua por chamadas reais ao Supabase
-      return {
-        id: "sub_123",
-        plan: "Business",
-        status: "active" as const,
-        price: 499,
-        nextBilling: "2025-05-03",
-      };
+      if (!user) throw new Error("Usuário não autenticado");
+      
+      const { data, error } = await supabase
+        .from("subscriptions")
+        .select("*")
+        .eq("user_id", user.id)
+        .single();
+
+      if (error) {
+        console.error("Erro ao buscar assinatura:", error);
+        return null;
+      }
+
+      return data ? {
+        id: data.id,
+        plan: data.plan_name,
+        status: data.status,
+        price: data.price,
+        nextBilling: new Date(data.current_period_end).toISOString().split('T')[0]
+      } : null;
     },
     enabled: !!user,
   });
@@ -33,33 +45,19 @@ export default function DashboardPage() {
   const { data: servicesData, isLoading: isLoadingServices } = useQuery({
     queryKey: ["services", user?.id],
     queryFn: async () => {
-      // Simulação de dados
-      return [
-        {
-          id: "srv_1",
-          name: "Monitorização",
-          description: "Monitorização 24/7 de servidores e aplicações",
-          status: "active",
-        },
-        {
-          id: "srv_2",
-          name: "Automatização",
-          description: "Scripts automatizados para tarefas recorrentes",
-          status: "active",
-        },
-        {
-          id: "srv_3",
-          name: "Chatbot de Atendimento",
-          description: "Chatbot para atendimento ao cliente",
-          status: "paused",
-        },
-        {
-          id: "srv_4",
-          name: "Job Scheduling",
-          description: "Agendamento de tarefas e processos",
-          status: "active",
-        },
-      ];
+      if (!user) throw new Error("Usuário não autenticado");
+      
+      const { data, error } = await supabase
+        .from("services")
+        .select("*")
+        .eq("user_id", user.id);
+
+      if (error) {
+        console.error("Erro ao buscar serviços:", error);
+        return [];
+      }
+
+      return data || [];
     },
     enabled: !!user,
   });
@@ -68,27 +66,21 @@ export default function DashboardPage() {
   const { data: invoicesData, isLoading: isLoadingInvoices } = useQuery({
     queryKey: ["invoices", user?.id],
     queryFn: async () => {
-      // Simulação de dados
-      return [
-        {
-          id: "inv_20240301",
-          amount: 499,
-          status: "paid" as const,
-          due_date: "2025-03-01",
-        },
-        {
-          id: "inv_20240201",
-          amount: 499,
-          status: "paid" as const,
-          due_date: "2025-02-01",
-        },
-        {
-          id: "inv_20240101",
-          amount: 499,
-          status: "paid" as const,
-          due_date: "2025-01-01",
-        },
-      ];
+      if (!user) throw new Error("Usuário não autenticado");
+      
+      const { data, error } = await supabase
+        .from("invoices")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("due_date", { ascending: false })
+        .limit(3);
+
+      if (error) {
+        console.error("Erro ao buscar faturas:", error);
+        return [];
+      }
+
+      return data || [];
     },
     enabled: !!user,
   });
@@ -97,19 +89,21 @@ export default function DashboardPage() {
   const { data: ticketsData, isLoading: isLoadingTickets } = useQuery({
     queryKey: ["tickets", user?.id],
     queryFn: async () => {
-      // Simulação de dados
-      return [
-        {
-          id: "ticket_123",
-          user_id: user?.id || "",
-          title: "Problema com chatbot",
-          description: "O chatbot não está respondendo corretamente às perguntas sobre horários de atendimento.",
-          status: "open" as const,
-          priority: "medium" as const,
-          created_at: "2025-04-01T10:30:00Z",
-          updated_at: "2025-04-01T10:30:00Z",
-        },
-      ];
+      if (!user) throw new Error("Usuário não autenticado");
+      
+      const { data, error } = await supabase
+        .from("support_tickets")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("status", "open")
+        .limit(3);
+
+      if (error) {
+        console.error("Erro ao buscar tickets:", error);
+        return [];
+      }
+
+      return data || [];
     },
     enabled: !!user,
   });
@@ -137,10 +131,16 @@ export default function DashboardPage() {
               <div className="card-stats">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-medium">Servidores</h3>
-                  <span className="text-sm text-muted-foreground">15 em uso</span>
+                  <span className="text-sm text-muted-foreground">
+                    {servicesData?.length || 0} em uso
+                  </span>
                 </div>
                 <div className="mt-2">
-                  <p className="text-3xl font-semibold">15/15</p>
+                  <p className="text-3xl font-semibold">
+                    {servicesData?.length || 0}/
+                    {subscriptionData?.plan === "Business" ? 15 : 
+                     subscriptionData?.plan === "Premium" ? 25 : 5}
+                  </p>
                   <p className="text-sm text-muted-foreground">Incluídos no plano</p>
                 </div>
               </div>

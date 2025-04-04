@@ -1,18 +1,15 @@
 
 import { createClient } from "@supabase/supabase-js";
 
-// Default fallback values for development
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "https://your-project.supabase.co";
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "your-anon-key";
+const supabaseUrl = "https://rhtwqpllkqsgtuybqywr.supabase.co";
+const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJodHdxcGxsa3FzZ3R1eWJxeXdyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM2MjQ5NjUsImV4cCI6MjA1OTIwMDk2NX0.qGuEksGaYq150hCRoCkkg0-uYmOP8TIncTuN-syZ6UY";
 
-// Log warning only if we're using the fallback values
-if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
-  console.warn(
-    "Running with fallback Supabase credentials. To use your own credentials, set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables."
-  );
-}
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+  }
+});
 
 // Tipos para os usuários
 export type UserProfile = {
@@ -44,17 +41,22 @@ export type Service = {
   name: string;
   description: string;
   status: "active" | "paused" | "inactive";
+  service_type: string;
+  usage_limit?: number;
+  usage_current?: number;
+  last_updated: string;
+  user_id: string;
 };
 
 // Tipos para as faturas
 export type Invoice = {
   id: string;
   user_id: string;
-  subscription_id: string;
   amount: number;
   status: "paid" | "pending" | "failed";
   due_date: string;
   paid_at: string | null;
+  created_at: string;
 };
 
 // Tipos para os tickets de suporte
