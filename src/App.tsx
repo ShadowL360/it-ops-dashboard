@@ -20,6 +20,9 @@ import BillingPage from "./pages/dashboard/billing";
 import SupportPage from "./pages/dashboard/support";
 import ProfilePage from "./pages/dashboard/profile";
 
+// Páginas de Admin
+import AdminSupportTicketsPage from "./pages/admin/support-tickets";
+
 // Componentes
 import { ProtectedRoute } from "./components/protected-route";
 import { AdminRoute } from "./components/admin-route";
@@ -66,6 +69,11 @@ const App = () => (
             <Route path="/dashboard/billing" element={
               <AdminRoute>
                 <BillingPage />
+              </AdminRoute>
+            } />
+            <Route path="/admin/support-tickets" element={
+              <AdminRoute>
+                <AdminSupportTicketsPage />
               </AdminRoute>
             } />
             

@@ -8,6 +8,7 @@ import {
   LogOut,
   Ticket,
   User,
+  MessageSquare
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -64,6 +65,11 @@ export const DashboardSidebar = () => {
       title: "Faturação",
       icon: Ticket,
       path: "/dashboard/billing",
+    },
+    {
+      title: "Pedidos de Suporte",
+      icon: MessageSquare,
+      path: "/admin/support-tickets",
     },
     {
       title: "Suporte",
