@@ -1,12 +1,15 @@
 
 import { createClient } from "@supabase/supabase-js";
 
-// Essas variáveis devem ser substituídas pelos valores reais do seu projeto Supabase
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "";
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
+// Default fallback values for development
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "https://your-project.supabase.co";
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "your-anon-key";
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error("Supabase credentials missing. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.");
+// Log warning only if we're using the fallback values
+if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+  console.warn(
+    "Running with fallback Supabase credentials. To use your own credentials, set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables."
+  );
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
