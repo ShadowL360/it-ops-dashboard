@@ -1,8 +1,7 @@
-
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { HddNetwork } from "lucide-react";
+import { Server } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 
 const Index = () => {
@@ -10,7 +9,6 @@ const Index = () => {
   const { user } = useAuth();
 
   useEffect(() => {
-    // Se o usuário já estiver logado, redirecionar para o dashboard
     if (user) {
       navigate("/dashboard");
     }
@@ -18,11 +16,10 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Header */}
       <header className="bg-white shadow-sm">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <a href="/" className="flex items-center gap-2 text-primary font-heading font-bold">
-            <HddNetwork className="h-6 w-6" />
+            <Server className="h-6 w-6" />
             <span className="text-xl">IT Operação</span>
           </a>
           <div className="flex items-center gap-4">
@@ -36,7 +33,6 @@ const Index = () => {
         </div>
       </header>
 
-      {/* Hero Section */}
       <section className="bg-gradient-to-br from-primary to-primary-dark text-white py-20">
         <div className="container mx-auto px-4 text-center">
           <h1 className="text-4xl md:text-5xl font-bold font-heading mb-6">
@@ -64,7 +60,6 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Features Section */}
       <section className="py-20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
@@ -75,7 +70,6 @@ const Index = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Feature 1 */}
             <div className="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow">
               <div className="bg-primary/10 w-12 h-12 flex items-center justify-center rounded-full mb-4">
                 <svg
@@ -99,7 +93,6 @@ const Index = () => {
               </p>
             </div>
 
-            {/* Feature 2 */}
             <div className="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow">
               <div className="bg-primary/10 w-12 h-12 flex items-center justify-center rounded-full mb-4">
                 <svg
@@ -123,7 +116,6 @@ const Index = () => {
               </p>
             </div>
 
-            {/* Feature 3 */}
             <div className="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow">
               <div className="bg-primary/10 w-12 h-12 flex items-center justify-center rounded-full mb-4">
                 <svg
@@ -150,7 +142,6 @@ const Index = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
       <section className="bg-gray-100 py-16">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold font-heading mb-6">
@@ -166,13 +157,12 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Footer */}
       <footer className="bg-gray-900 text-white py-12 mt-auto">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div>
               <div className="flex items-center gap-2 text-white font-heading font-bold mb-4">
-                <HddNetwork className="h-6 w-6" />
+                <Server className="h-6 w-6" />
                 <span className="text-xl">IT Operação</span>
               </div>
               <p className="text-gray-400 mb-4">

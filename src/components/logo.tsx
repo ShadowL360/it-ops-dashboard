@@ -1,6 +1,6 @@
 
 import React from "react";
-import { HddNetwork } from "lucide-react";
+import { Server } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface LogoProps {
@@ -14,7 +14,7 @@ export const Logo: React.FC<LogoProps> = ({ variant = "default", className = "" 
       to="/"
       className={`flex items-center space-x-2 ${variant === "dashboard" ? "text-white" : "text-primary"} font-heading font-bold ${className}`}
     >
-      <HddNetwork className="h-6 w-6" />
+      <Server className="h-6 w-6" />
       <span className="text-xl">IT Operação</span>
     </Link>
   );
